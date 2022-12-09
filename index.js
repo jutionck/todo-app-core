@@ -1,80 +1,160 @@
-const express = require('express');
-const multer = require('multer');
-const path = require("path");
-// const upload = multer({dest: './public/data/uploads/'})
+const express = require('express')
 const app = express();
 const port = 8888;
 app.use(express.json());
-app.use(express.urlencoded());
 
-app.get('/hello', (req, res) => {
-    const {name, address} = req.query;
-    res.json({message: `Hello express here with name ${name} and address ${address}`});
-});
+const ApiUrl = {
+    POST_USER_REGISTRATION: '/users/registration',
+    POST_USER_LOGIN: '/users/login',
+    GET_USER_LIST: '/users',
+    GET_USER_BY_ID: '/users/:id',
+    POST_TODO: '/todos',
+    PUT_TODO: '/todos',
+    GET_TODO_LIST: '/todos',
+    GET_TODO_BY_ID: '/todos/:id',
+    DELETE_TODO: '/todos/:id'
+}
 
-app.get('/hello/:id', (req, res) => {
-    const {id} = req.params;
-    res.json({message: `Hello express here with number ${id}`});
-});
-
-app.post('/hello', (req, res) => {
-    const {name, address} = req.body;
-    res.json({message: `Hello express here from body with name ${name} and address ${address}`});
-});
-
-// app.post('/upload', (req, res) => {
-//     console.log('req.body:', JSON.stringify(req.body))
-//     // res.json({message: `Hello express here from body with name ${name} and address ${address}`});
-// });
-
-// text-only multipart/data
-// app.post('/upload', multer().none(), (req, res) => {
-//     const payload = req.body;
-//     const payloadParse = JSON.parse(payload['employee']);
-//     const { name, address } = payloadParse;
-//     res.json({message: `Hello express here from body with name ${name} and address ${address}`});
-// });
-
-// with file -> name: photo
-// app.post('/upload', upload.single('photo'), (req, res) => {
-//     const payload = req.body;
-//     const payloadParse = JSON.parse(payload['employee']);
-//     const {name, address} = payloadParse;
-//     const {originalname, mimetype, destination, filename, path, size} = req.file;
-//     const newFileName = filename + '.'+ originalname.split('.')[1];
-//     const photoLocation = path + '.'+originalname.split('.')[1];
-//     res.json({message: `Hello express here from body with name ${name} and address ${address} and photo: ${newFileName} and locationPath ${photoLocation}`});
-// });
-
-// destination
-// create folder destination -> public/uploads
-const diskStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, "public/uploads"));
-    },
-    filename: function (req, file, cb) {
-        cb(
-            null,
-            file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-        );
-    },
-});
-
-app.post(
-    "/hello/upload",
-    multer({ storage: diskStorage }).single("photo"),
-    (req, res) => {
-        const file = req.file.path;
-        if (!file) {
-            res.status(400).send({
-                status: false,
-                data: "No File is selected.",
-            });
-        }
-        // req.file.path -> for save to model
-        res.send(file);
+// TODO membuat service registration -> id, email, password
+const users = [];
+app.post(ApiUrl.POST_USER_REGISTRATION, (req, res) => {
+    const {email, password} = req.body;
+    const user = {
+        id: users.length + 1,
+        email: email,
+        password: password
     }
-);
+    users.push(user);
+    res.status(201).json({
+        code: res.statusCode,
+        msg: 'Registration Success',
+        data: {
+            id: user.id,
+            email: user.email
+        }
+    });
+});
+
+app.get(ApiUrl.GET_USER_LIST, (req, res) => {
+    const result = users.map((u) => {
+        return {
+            id: u.id,
+            email: u.email
+        }
+    });
+    res.status(200).json({
+        code: res.statusCode,
+        msg: 'User List',
+        data: result
+    });
+});
+
+app.get(ApiUrl.GET_USER_BY_ID, (req, res) => {
+    const {id} = req.params;
+    const user = users.find((u) => {
+        return u.id === +id
+    });
+    res.status(200).json({
+        code: res.statusCode,
+        msg: 'User',
+        data: {
+            id: user.id,
+            email: user.email
+        }
+    });
+});
+
+// app.post(ApiUrl.POST_USER_LOGIN, (req, res) => {
+//     const {email, password} = req.body;
+//     const findUserByEmailPassword = users.find((u) => {
+//         if (u.email === email && u.password === password) {
+//             return u;
+//         }
+//     });
+//
+//     if (!findUserByEmailPassword) {
+//         res.status(400).json({
+//             code: res.statusCode,
+//             msg: 'User Login',
+//             data: `Username atau Password salah!`
+//         })
+//     } else {
+//         console.log(req.user)
+//         res.status(201).json({
+//             code: res.statusCode,
+//             msg: 'User Login',
+//             data: {
+//                 id: findUserByEmailPassword.id,
+//             }
+//         });
+//     }
+// });
+
+// TODO membuat service todo -> id, name, isCompleted
+const todos = [];
+app.post(ApiUrl.POST_TODO, (req, res) => {
+    const { name } = req.body;
+    const newTodo = {
+        id: todos.length + 1,
+        name: name,
+        isCompleted: false
+    }
+    todos.push(newTodo);
+    res.status(200).json({
+        code: res.statusCode,
+        msg: 'Success create todo',
+        data: newTodo
+    });
+});
+
+app.get(ApiUrl.GET_TODO_LIST, (req, res) => {
+    res.status(200).json({
+        code: res.statusCode,
+        msg: 'Success get all todo',
+        data: todos
+    });
+});
+
+app.get(ApiUrl.GET_TODO_BY_ID, (req, res) => {
+    const { id } = req.params;
+    const todo = todos.find((t) => t.id === +id);
+    res.status(200).json({
+        code: res.statusCode,
+        msg: 'Success get todo',
+        data: todo
+    });
+});
+
+app.put(ApiUrl.PUT_TODO, (req, res) => {
+    const { id, name, isCompleted } = req.body;
+    todos.map((t) => {
+        if (t.id === +id) {
+            t.id = id;
+            t.name = name;
+            t.isCompleted = isCompleted
+        }
+        return t;
+    });
+    res.status(200).json({
+        code: res.statusCode,
+        msg: 'Success update todo',
+        data: {
+            id: id,
+            name: name,
+            isCompleted: isCompleted
+        }
+    });
+});
+
+app.delete(ApiUrl.DELETE_TODO, (req, res) => {
+    const { id } = req.params;
+    for (let index = 0; index < todos.length; index++) {
+        if (todos[index].id === +id) {
+            todos.splice(index, 1);
+        }
+    }
+    res.status(204).send();
+});
 
 app.listen(port, () => {
     console.log(`App is running on ${port}`)
