@@ -3,13 +3,20 @@ const Config = require('../db/config');
 
 const UserController = () => {
     const userService = UserService(Config().db);
-    const create = async (req, res) => {
+    const registerUser = async (req, res) => {
         const payload = req.body;
-        const newUser = await userService.create(payload);
+        const result = await userService.register(payload);
+        if (typeof result === "string") {
+            res.status(400).json({
+                code: res.statusCode,
+                msg: result
+            });
+            return;
+        }
         res.status(200).json({
             code: res.statusCode,
             msg: 'Success user create',
-            data: newUser
+            data: result
         });
     }
 
@@ -32,7 +39,24 @@ const UserController = () => {
         });
     }
 
-    return { create, list, get }
+    const loginUser = async (req, res) => {
+        const { email, password } = req.body;
+        const result = await userService.login({email, password});
+        if (typeof result === "string") {
+            res.status(400).json({
+                code: res.statusCode,
+                msg: result
+            });
+            return;
+        }
+        res.status(200).json({
+            code: res.statusCode,
+            msg: 'Success user login',
+            data: result
+        });
+    }
+
+    return { registerUser, list, get, loginUser }
 }
 
 module.exports = UserController;

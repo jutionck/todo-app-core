@@ -4,8 +4,9 @@ const Config = require('../db/config');
 const TodoController = () => {
     const todoService = TodoService(Config().db);
     const create = async (req, res) => {
-        const payload = req.body;
-        const newTodo = await todoService.create(payload);
+        const {name} = req.body;
+        const {id} = req.user
+        const newTodo = await todoService.create({name, id});
         res.status(200).json({
             code: res.statusCode,
             msg: 'Success todo create',
@@ -14,7 +15,8 @@ const TodoController = () => {
     }
 
     const list = async (req, res) => {
-        const todos = await todoService.list();
+        const {id} = req.user;
+        const todos = await todoService.list(id);
         res.status(200).json({
             code: res.statusCode,
             msg: 'Success todo list',
@@ -24,7 +26,8 @@ const TodoController = () => {
 
     const get = async (req, res) => {
         const {id} = req.params;
-        const todo = await todoService.get(id);
+        const userId = req.user.id;
+        const todo = await todoService.get(id, userId);
         res.status(200).json({
             code: res.statusCode,
             msg: 'Success todo get by id',
@@ -33,8 +36,9 @@ const TodoController = () => {
     }
 
     const update = async (req, res) => {
-        const payload = req.body;
-        const todo = await todoService.update(payload);
+        const {id, name, isCompleted} = req.body;
+        const userId = req.user.id;
+        const todo = await todoService.update({id, name, isCompleted, userId});
         res.status(200).json({
             code: res.statusCode,
             msg: 'Success todo update',
@@ -44,7 +48,8 @@ const TodoController = () => {
 
     const remove = async (req, res) => {
         const {id} = req.params;
-        await todoService.remove(id);
+        const userId = req.user.id;
+        await todoService.remove(id, userId);
         res.status(204).send();
     }
 
