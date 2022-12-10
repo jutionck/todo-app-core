@@ -1,4 +1,5 @@
 const {v4: uuidv4} = require('uuid');
+const jwt = require('jsonwebtoken');
 const {generatedToken} = require('../middleware/auth.middleware');
 
 const UserService = (db) => {
@@ -62,11 +63,18 @@ const UserService = (db) => {
         if (result.rowCount === 0) {
             return `Email or password not correct!`;
         }
-        const token = generatedToken(result.rows[0].id);
+        const jwtPayload = {
+            id: result.rows[0].id,
+            email: result.rows[0].email,
+        }
+        // TODO jwt.sign ({ ...payload }, key, {expiresIn, algorithm}, null)
+        const key = 'EN1GmaBoZZZ!';
+        const expiresIn = '30m';
+        const accessToken = jwt.sign(jwtPayload, key, {expiresIn}, null);
         return {
             id: result.rows[0].id,
             email: result.rows[0].email,
-            token: token,
+            token: accessToken,
         };
     }
 
